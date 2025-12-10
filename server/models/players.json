@@ -1,0 +1,9 @@
+{
+  "players": [
+    {
+      "nameCode": "Admin",
+      "email": null,
+      "isAdmin": true
+    }
+  ]
+}
