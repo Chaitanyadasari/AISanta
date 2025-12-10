@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 
-function Login({ onLogin }) {
+const API_URL = 'http://localhost:5000/api';
+
+function Login({ onLogin, error }) {
   const [nameCode, setNameCode] = useState("");
   const [email, setEmail] = useState("");
   const handleSubmit = (e) => {
@@ -21,6 +23,7 @@ function Login({ onLogin }) {
         </div>
         <button type="submit">Login</button>
       </form>
+      {error && <div className="error">{error}</div>}
     </div>
   );
 }
@@ -31,14 +34,16 @@ function Landing({ currentUser, assignment }) {
       <h3>Welcome, {currentUser}</h3>
       {currentUser === 'Admin' ? (
         <p>Click 'NameCodes' to add/view players.</p>
-      ) : (
+      ) : assignment ? (
         <p>You are Secret Santa for: <strong>{assignment}</strong></p>
+      ) : (
+        <p>Loading assignment...</p>
       )}
     </div>
   );
 }
 
-function NameCodes({ codes, onAdd, isAdmin }) {
+function NameCodes({ codes, onAdd, isAdmin, error }) {
   const [newName, setNewName] = useState("");
   const handleAdd = () => {
     if (newName.trim()) {
@@ -56,6 +61,7 @@ function NameCodes({ codes, onAdd, isAdmin }) {
           <button onClick={handleAdd}>Save</button>
         </div>
       )}
+      {error && <div className="error">{error}</div>}
     </div>
   );
 }
@@ -63,39 +69,102 @@ function NameCodes({ codes, onAdd, isAdmin }) {
 function App() {
   const [page, setPage] = useState("login");
   const [user, setUser] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
   const [assignment, setAssignment] = useState("");
   const [codes, setCodes] = useState([]);
+  const [error, setError] = useState("");
+  const [isLoading, setLoading] = useState(false);
 
-  // Placeholder handlers until API is connected
-  function handleLogin(nameCode, email) {
-    setUser(nameCode);
-    setPage("landing");
-    if (nameCode !== "Admin") setAssignment("...");
+  async function handleLogin(nameCode, email) {
+    setLoading(true);
+    setError("");
+    try {
+      const resp = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nameCode, email })
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) throw new Error(data.message || 'Login failed');
+      setUser(nameCode);
+      setUserEmail(email);
+      setPage("landing");
+      if (nameCode !== "Admin") {
+        // Fetch assignment
+        const assnResp = await fetch(`${API_URL}/getAssignment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nameCode })
+        });
+        const assnData = await assnResp.json();
+        if (assnData.success) setAssignment(assnData.recipient);
+        else setAssignment('None assigned');
+      } else {
+        setAssignment("");
+      }
+    } catch (err) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   }
-  function openNameCodes() {
-    setPage("namecodes");
-    setCodes(["Alice","Bob","Charlie"]); // Will call API later
+  async function openNameCodes() {
+    setLoading(true);
+    setError("");
+    try {
+      const resp = await fetch(`${API_URL}/namecodes`);
+      const data = await resp.json();
+      setCodes(data.nameCodes || []);
+      setPage("namecodes");
+    } catch (err) {
+      setError("Failed to load NameCodes");
+    } finally {
+      setLoading(false);
+    }
   }
-  function handleAddName(newName) {
-    setCodes(prev => ([...prev, newName])); // Later, sent to API
+  async function handleAddName(newName) {
+    setError("");
+    try {
+      const resp = await fetch(`${API_URL}/namecodes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nameCode: newName })
+      });
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.message || 'Could not add');
+      // Re-fetch after add
+      openNameCodes();
+    } catch (err) {
+      setError(err.message || 'Failed to add');
+    }
+  }
+
+  function logout() {
+    setUser(null);
+    setAssignment("");
+    setPage("login");
+    setCodes([]);
+    setError("");
+    setUserEmail(null);
   }
 
   return (
     <div>
-      {page === "login" && <Login onLogin={handleLogin} />}
+      {page === "login" && <Login onLogin={handleLogin} error={error} />}
       {page !== "login" && (
         <nav>
           {user === 'Admin' && <button onClick={()=>setPage("landing")}>Home</button>}
           <button onClick={openNameCodes}>NameCodes</button>
-          <button onClick={()=>setPage("login")}>Logout</button>
+          <button onClick={logout}>Logout</button>
         </nav>
       )}
       {page === "landing" && user && (
         <Landing currentUser={user} assignment={assignment} />
       )}
       {page === "namecodes" && (
-        <NameCodes codes={codes} onAdd={handleAddName} isAdmin={user==="Admin"} />
+        <NameCodes codes={codes} onAdd={handleAddName} isAdmin={user==="Admin"} error={error} />
       )}
+      {isLoading && <div className="loading">Loading...</div>}
     </div>
   );
 }
