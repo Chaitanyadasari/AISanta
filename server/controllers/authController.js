@@ -1,0 +1,27 @@
+const fs = require('fs');
+const path = require('path');
+
+const PLAYERS_FILE = path.join(__dirname, '../models/players.json');
+
+function getPlayers() {
+  const data = fs.readFileSync(PLAYERS_FILE, 'utf-8');
+  return JSON.parse(data).players;
+}
+
+exports.login = (req, res) => {
+  const { nameCode, email } = req.body;
+  if (!nameCode || !email) {
+    return res.status(400).json({ success: false, message: 'NameCode and Email are required.' });
+  }
+  const players = getPlayers();
+  const user = players.find(p => p.nameCode.toLowerCase() === nameCode.toLowerCase() && !p.isAdmin);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'NameCode not found or not a player.' });
+  }
+  // Optionally update email if not present (so player can be contacted)
+  if (!user.email) {
+    user.email = email;
+    fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
+  }
+  return res.json({ success: true, nameCode: user.nameCode, email: user.email });
+};

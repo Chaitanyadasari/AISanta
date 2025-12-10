@@ -10,6 +10,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Load routers/controllers here (to be added)
+const authController = require('./controllers/authController');
+const gameController = require('./controllers/gameController');
+const playerController = require('./controllers/playerController');
+
+app.post('/api/login', authController.login);
+app.post('/api/getAssignment', gameController.getAssignment);
+app.get('/api/namecodes', playerController.getNameCodes);
+app.post('/api/namecodes', playerController.addNameCode);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
