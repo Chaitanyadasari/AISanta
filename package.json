@@ -12,7 +12,7 @@
     "build": "cd client && npm install && npm run build",
     "install-all": "npm install && cd client && npm install",
     "setup-auth": "node server/hashPasswords.js",
-    "postinstall": "npm run install-all",
+    "postinstall": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
