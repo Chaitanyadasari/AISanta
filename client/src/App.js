@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Landing from './components/Landing';
 import NameCodes from './components/NameCodes';
@@ -8,15 +8,88 @@ import { login, getAssignment, getNameCodes, addPlayer, generateAssignments } fr
 import './App.css';
 
 function App() {
-  const [page, setPage] = useState("login");
-  const [user, setUser] = useState(null);
-  const [userEmail, setUserEmail] = useState(null);
-  const [assignment, setAssignment] = useState("");
+  // Initialize state from localStorage or defaults
+  const [page, setPage] = useState(() => {
+    const savedPage = localStorage.getItem('santa_page');
+    return savedPage || "login";
+  });
+  const [user, setUser] = useState(() => {
+    return localStorage.getItem('santa_user') || null;
+  });
+  const [userEmail, setUserEmail] = useState(() => {
+    return localStorage.getItem('santa_userEmail') || null;
+  });
+  const [assignment, setAssignment] = useState(() => {
+    return localStorage.getItem('santa_assignment') || "";
+  });
   const [codes, setCodes] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setLoading] = useState(false);
   const [loadingGen, setLoadingGen] = useState(false);
   const [genMessage, setGenMessage] = useState("");
+
+  // Restore session on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('santa_user');
+    const savedPage = localStorage.getItem('santa_page');
+    const savedAssignment = localStorage.getItem('santa_assignment');
+    
+    if (savedUser && savedPage && savedPage !== "login") {
+      // User was logged in, restore their session
+      setUser(savedUser);
+      setUserEmail(localStorage.getItem('santa_userEmail'));
+      setPage(savedPage);
+      setAssignment(savedAssignment || "");
+      
+      // If not admin, fetch assignment if not already saved
+      if (savedUser?.toLowerCase() !== "admin" && !savedAssignment) {
+        getAssignment(savedUser).then(assnData => {
+          if (assnData.success) {
+            setAssignment(assnData.recipient);
+            localStorage.setItem('santa_assignment', assnData.recipient);
+          }
+        });
+      }
+      
+      // If on namecodes page, reload the codes
+      if (savedPage === "namecodes") {
+        getNameCodes().then(data => {
+          setCodes(data.nameCodes || []);
+        });
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('santa_user', user);
+    } else {
+      localStorage.removeItem('santa_user');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (userEmail) {
+      localStorage.setItem('santa_userEmail', userEmail);
+    } else {
+      localStorage.removeItem('santa_userEmail');
+    }
+  }, [userEmail]);
+
+  useEffect(() => {
+    if (page) {
+      localStorage.setItem('santa_page', page);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    if (assignment) {
+      localStorage.setItem('santa_assignment', assignment);
+    } else {
+      localStorage.removeItem('santa_assignment');
+    }
+  }, [assignment]);
 
   async function handleLogin(nameCode, email) {
     setLoading(true);
@@ -27,13 +100,23 @@ function App() {
       setUser(nameCode);
       setUserEmail(email);
       setPage("landing");
+      // Save to localStorage
+      localStorage.setItem('santa_user', nameCode);
+      localStorage.setItem('santa_userEmail', email);
+      localStorage.setItem('santa_page', 'landing');
+      
       if (nameCode?.toLowerCase() !== "admin") {
         // Fetch assignment
         const assnData = await getAssignment(nameCode);
-        if (assnData.success) setAssignment(assnData.recipient);
-        else setAssignment('None assigned');
+        if (assnData.success) {
+          setAssignment(assnData.recipient);
+          localStorage.setItem('santa_assignment', assnData.recipient);
+        } else {
+          setAssignment('None assigned');
+        }
       } else {
         setAssignment("");
+        localStorage.removeItem('santa_assignment');
       }
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -49,6 +132,7 @@ function App() {
       const data = await getNameCodes();
       setCodes(data.nameCodes || []);
       setPage("namecodes");
+      localStorage.setItem('santa_page', 'namecodes');
     } catch (err) {
       setError("Failed to load NameCodes");
     } finally {
@@ -92,6 +176,11 @@ function App() {
     setCodes([]);
     setError("");
     setUserEmail(null);
+    // Clear all session data from localStorage
+    localStorage.removeItem('santa_user');
+    localStorage.removeItem('santa_userEmail');
+    localStorage.removeItem('santa_page');
+    localStorage.removeItem('santa_assignment');
   }
 
   return (
@@ -103,7 +192,10 @@ function App() {
       )}
       {page !== "login" && (
         <Navigation
-          onHome={() => setPage("landing")}
+          onHome={() => {
+            setPage("landing");
+            localStorage.setItem('santa_page', 'landing');
+          }}
           onNameCodes={openNameCodes}
           onLogout={logout}
         />
@@ -127,7 +219,10 @@ function App() {
           onAdd={handleAddName}
           isAdmin={user?.toLowerCase() === 'admin'}
           error={error}
-          onAddSuccess={() => setPage("landing")}
+          onAddSuccess={() => {
+            setPage("landing");
+            localStorage.setItem('santa_page', 'landing');
+          }}
         />
       )}
       {isLoading && <div className="loading">⏳ Loading...</div>}
