@@ -20,7 +20,9 @@ exports.getAssignment = async (req, res) => {
   const { nameCode } = req.body;
   if (!nameCode) return res.status(400).json({ success: false, message: 'Missing NameCode' });
   const assignments = readAssignments();
-  let assignment = assignments.find(a => a.santa === nameCode);
+  // Normalize for comparison (ignore spaces and case) - same as login
+  const normalize = s => (s || '').replace(/\s+/g, '').toLowerCase();
+  let assignment = assignments.find(a => normalize(a.santa) === normalize(nameCode));
   if (assignment) {
     return res.json({ success: true, recipient: assignment.recipient });
   }
@@ -99,4 +101,15 @@ exports.generateAssignments = async (req, res) => {
   }
   
   res.json({ success: true, message: 'Assignments generated and emailed', assignments });
+};
+
+exports.resetAssignments = async (req, res) => {
+  const { nameCode } = req.body;
+  // Only allow admin
+  if (!nameCode || nameCode.toLowerCase() !== 'admin') {
+    return res.status(401).json({ success: false, message: 'Only admin can reset assignments' });
+  }
+  // Clear all assignments
+  writeAssignments([]);
+  res.json({ success: true, message: 'All assignments have been cleared' });
 };

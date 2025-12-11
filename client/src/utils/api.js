@@ -41,3 +41,12 @@ export async function generateAssignments(nameCode) {
   return resp.json();
 }
 
+export async function resetAssignments(nameCode) {
+  const resp = await fetch(`${API_URL}/reset-assignments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nameCode })
+  });
+  return resp.json();
+}
+

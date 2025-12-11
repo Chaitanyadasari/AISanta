@@ -19,6 +19,7 @@ app.post('/api/getAssignment', gameController.getAssignment);
 app.get('/api/namecodes', playerController.getNameCodes);
 app.post('/api/namecodes', playerController.addNameCode);
 app.post('/api/generate-assignments', gameController.generateAssignments);
+app.post('/api/reset-assignments', gameController.resetAssignments);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
