@@ -28,7 +28,7 @@ function Login({ onLogin, error }) {
   );
 }
 
-function Landing({ currentUser, onAddNameCodes }) {
+function Landing({ currentUser, onAddNameCodes, onGenerateAssignments, genMessage, loadingGen }) {
   return (
     <div className="landing-page">
       <h3>Welcome, {currentUser}</h3>
@@ -36,6 +36,10 @@ function Landing({ currentUser, onAddNameCodes }) {
         <>
           <p>Click 'NameCodes' to view all, or use button below to add players.</p>
           <button onClick={onAddNameCodes} style={{marginBottom:20}}>Add NameCodes</button>
+          <div style={{marginBottom:20}}>
+            <button onClick={onGenerateAssignments} disabled={loadingGen} style={{background:'#e36c19', color:'white'}}>Generate Assignments</button>
+            {genMessage && <div style={{fontSize:'0.97em',marginTop:5,color:genMessage.includes('success')?'green':'#b81212'}}>{genMessage}</div>}
+          </div>
         </>
       ) : null}
     </div>
@@ -44,10 +48,20 @@ function Landing({ currentUser, onAddNameCodes }) {
 
 function NameCodes({ codes, onAdd, isAdmin, error, onAddSuccess }) {
   const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [addMsg, setAddMsg] = useState("");
   const handleAdd = async () => {
-    if (newName.trim()) {
-      await onAdd(newName.trim(), onAddSuccess);
-      setNewName("");
+    setAddMsg("");
+    if (newName.trim() && newEmail.trim()) {
+      const r = await onAdd(newName.trim(), newEmail.trim(), onAddSuccess);
+      if (r && r.success) {
+        setAddMsg("Player added!");
+        setNewName(""); setNewEmail("");
+      } else if (r && r.message) {
+        setAddMsg(r.message);
+      }
+    } else {
+      setAddMsg("Both NameCode and Email required!");
     }
   };
   return (
@@ -57,7 +71,9 @@ function NameCodes({ codes, onAdd, isAdmin, error, onAddSuccess }) {
       {isAdmin && (
         <div style={{marginTop:20}}>
           <input value={newName} placeholder="Add new name" onChange={e=>setNewName(e.target.value)} />
+          <input value={newEmail} placeholder="Add email" type="email" style={{marginLeft:8}} onChange={e=>setNewEmail(e.target.value)} />
           <button onClick={handleAdd}>Save</button>
+          {addMsg && <div style={{marginTop:5, fontSize:'0.92em', color:addMsg.includes('added')?'green':'#a10202'}}>{addMsg}</div>}
         </div>
       )}
       {error && <div className="error">{error}</div>}
@@ -73,6 +89,8 @@ function App() {
   const [codes, setCodes] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setLoading] = useState(false);
+  const [loadingGen, setLoadingGen] = useState(false);
+  const [genMessage, setGenMessage] = useState("");
 
   async function handleLogin(nameCode, email) {
     setLoading(true);
@@ -88,7 +106,7 @@ function App() {
       setUser(nameCode);
       setUserEmail(email);
       setPage("landing");
-      if (nameCode !== "Admin") {
+      if (nameCode?.toLowerCase() !== "admin") {
         // Fetch assignment
         const assnResp = await fetch(`${API_URL}/getAssignment`, {
           method: 'POST',
@@ -121,21 +139,40 @@ function App() {
       setLoading(false);
     }
   }
-  async function handleAddName(newName, cbAfter) {
+  async function handleAddName(newName, newEmail, cbAfter) {
     setError("");
     try {
       const resp = await fetch(`${API_URL}/namecodes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nameCode: newName })
+        body: JSON.stringify({ nameCode: newName, email: newEmail })
       });
       const data = await resp.json();
-      if (!data.success) throw new Error(data.message || 'Could not add');
+      if (!data.success) return { success: false, message: data.message };
       // Re-fetch after add
       await openNameCodes();
-      if (user === "Admin" && cbAfter) cbAfter();
+      if (user?.toLowerCase() === "admin" && cbAfter) cbAfter();
+      return { success: true };
     } catch (err) {
       setError(err.message || 'Failed to add');
+      return { success: false, message: err.message };
+    }
+  }
+  async function handleGenerateAssignments() {
+    setLoadingGen(true); setGenMessage("");
+    try {
+      const resp = await fetch(`${API_URL}/generate-assignments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nameCode: user })
+      });
+      const data = await resp.json();
+      if (data.success) setGenMessage('Assignments generated and emailed successfully!');
+      else setGenMessage(data.message || 'Generation failed');
+    } catch (err) {
+      setGenMessage('Assignment generation failed.');
+    } finally {
+      setLoadingGen(false);
     }
   }
 
@@ -159,16 +196,27 @@ function App() {
         </nav>
       )}
       {page === "landing" && user && (
-        <Landing currentUser={user} onAddNameCodes={()=>setPage("namecodes")} />
+        <Landing
+          currentUser={user}
+          onAddNameCodes={()=>setPage("namecodes")}
+          onGenerateAssignments={handleGenerateAssignments}
+          genMessage={genMessage}
+          loadingGen={loadingGen}
+        />
       )}
       {page === "namecodes" && (
-        <NameCodes 
-          codes={codes} 
-          onAdd={handleAddName} 
-          isAdmin={user?.toLowerCase() === 'admin'} 
-          error={error} 
+        <NameCodes
+          codes={codes}
+          onAdd={handleAddName}
+          isAdmin={user?.toLowerCase() === 'admin'}
+          error={error}
           onAddSuccess={()=>setPage("landing")}
         />
+      )}
+      {user && user?.toLowerCase() !== 'admin' && page === 'landing' && assignment && (
+        <div className="landing-page" style={{marginTop:32}}>
+          <h3>You are Secret Santa for: <span style={{color:'#0347ac'}}>{assignment}</span></h3>
+        </div>
       )}
       {isLoading && <div className="loading">Loading...</div>}
     </div>

@@ -17,15 +17,20 @@ exports.getNameCodes = (req, res) => {
 };
 
 exports.addNameCode = (req, res) => {
-  const { nameCode } = req.body;
+  const { nameCode, email } = req.body;
+  // Check nameCode, prevent duplicates and admin
   if (!nameCode || nameCode.toLowerCase() === 'admin') {
     return res.status(400).json({ success: false, message: 'Invalid NameCode!' });
+  }
+  // Validate email
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ success: false, message: 'Valid email is required!' });
   }
   const players = getPlayers();
   if (players.some(p => p.nameCode.toLowerCase() === nameCode.toLowerCase())) {
     return res.status(400).json({ success: false, message: 'NameCode already exists' });
   }
-  players.push({ nameCode, email: null, isAdmin: false });
+  players.push({ nameCode, email, isAdmin: false });
   writePlayers(players);
-  res.json({ success: true, message: 'NameCode added' });
+  res.json({ success: true, message: 'NameCode and email added' });
 };

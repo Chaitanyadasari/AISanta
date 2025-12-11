@@ -45,3 +45,44 @@ exports.getAssignment = async (req, res) => {
   }
   return res.json({ success: true, recipient });
 };
+
+exports.generateAssignments = async (req, res) => {
+  const { nameCode } = req.body;
+  // Only allow admin
+  if (!nameCode || nameCode.toLowerCase() !== 'admin') {
+    return res.status(401).json({ success: false, message: 'Only admin can generate assignments' });
+  }
+  const players = getPlayers();
+  if (players.length < 2) {
+    return res.status(400).json({ success: false, message: 'Not enough players for assignments' });
+  }
+  // Only non-admins
+  const santas = players.filter(p => !p.isAdmin);
+  let recipients = [...santas.map(p => p.nameCode)];
+  let assignments = [];
+  // shuffle helper
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+  shuffle(recipients);
+  // Prevent self-assignment and duplicate recipients
+  for (let i = 0; i < santas.length; ++i) {
+    let santa = santas[i].nameCode;
+    // Avoid self-assign
+    let options = recipients.filter(r => r !== santa);
+    if (options.length === 0) {
+      // restart if stuck (rare for >2)
+      return res.status(500).json({ success: false, message: 'Assignment failed. Please try again.' });
+    }
+    let recipient = options[0];
+    assignments.push({ santa, recipient });
+    recipients = recipients.filter(r => r !== recipient);
+  }
+  writeAssignments(assignments);
+  // Send emails
+  for (const a of assignments) {
+    const santaPlayer = santas.find(p => p.nameCode === a.santa);
+    if (santaPlayer && santaPlayer.email) {
+      try { await sendAssignmentEmail(santaPlayer.email, a.recipient); } catch {}
+    }
+  }
+  res.json({ success: true, message: 'Assignments generated and emailed', assignments });
+};
