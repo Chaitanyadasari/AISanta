@@ -4,6 +4,10 @@ const nodemailer = require('nodemailer');
 const emailUser = process.env.EMAIL_USER || 'your_gmail@gmail.com';
 const emailPass = process.env.EMAIL_PASS || 'your_gmail_app_password';
 
+console.log('Email Service Initialized:');
+console.log('  Email User:', emailUser);
+console.log('  Email Pass:', emailPass ? '****' + emailPass.slice(-4) : 'NOT SET');
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -13,6 +17,7 @@ const transporter = nodemailer.createTransport({
 });
 
 function sendAssignmentEmail(to, assignedNameCode) {
+  console.log(`Attempting to send email to: ${to} for assignment: ${assignedNameCode}`);
   return transporter.sendMail({
     from: `AI Santa <${emailUser}>`,
     to,

@@ -13,12 +13,17 @@
     "install-all": "npm install && cd client && npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["secret-santa", "gift-exchange", "christmas"],
+  "keywords": [
+    "secret-santa",
+    "gift-exchange",
+    "christmas"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^2.2.1",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "nodemailer": "^7.0.11"
   },
