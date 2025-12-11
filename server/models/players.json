@@ -9,6 +9,16 @@
       "nameCode": "HarshithaVasireddy",
       "email": "harshithavasireddy.2@gmail.com",
       "isAdmin": false
+    },
+    {
+      "nameCode": "Hitesh Sannithi",
+      "email": "sanihit007@gmail.com",
+      "isAdmin": false
+    },
+    {
+      "nameCode": "Chaitanya Dasari",
+      "email": "chay.dasari52@gmail.com",
+      "isAdmin": false
     }
   ]
 }

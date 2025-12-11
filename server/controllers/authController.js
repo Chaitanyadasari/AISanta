@@ -30,15 +30,18 @@ exports.login = (req, res) => {
     }
     return res.json({ success: true, nameCode: user.nameCode, email: user.email });
   } else {
-    // Match ignoring all spaces and case
+    // Match ignoring all spaces and case for nameCode
     const normalize = s => (s || '').replace(/\s+/g, '').toLowerCase();
     user = players.find(p => !p.isAdmin && normalize(p.nameCode) === normalize(nameCode));
     if (!user) {
-      return res.status(404).json({ success: false, message: 'NameCode not found or not a player.' });
+      return res.status(404).json({ success: false, message: 'Player Name not found or not a player.' });
     }
+    // Verify email matches (case-insensitive)
     if (!user.email) {
-      user.email = email;
-      fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
+      return res.status(401).json({ success: false, message: 'Email not registered for this player. Please contact admin.' });
+    }
+    if (user.email.toLowerCase() !== email.toLowerCase()) {
+      return res.status(401).json({ success: false, message: 'Invalid email. Email does not match the registered email for this player.' });
     }
     return res.json({ success: true, nameCode: user.nameCode, email: user.email });
   }

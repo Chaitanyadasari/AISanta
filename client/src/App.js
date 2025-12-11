@@ -28,6 +28,24 @@ function App() {
   const [loadingGen, setLoadingGen] = useState(false);
   const [genMessage, setGenMessage] = useState("");
 
+  // Function to check for assignment updates
+  const checkAssignment = async (nameCode) => {
+    if (nameCode?.toLowerCase() !== "admin") {
+      try {
+        const assnData = await getAssignment(nameCode);
+        if (assnData.success) {
+          setAssignment(assnData.recipient);
+          localStorage.setItem('santa_assignment', assnData.recipient);
+        } else {
+          setAssignment('');
+          localStorage.setItem('santa_assignment', '');
+        }
+      } catch (err) {
+        // Error checking assignment
+      }
+    }
+  };
+
   // Restore session on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('santa_user');
@@ -41,14 +59,9 @@ function App() {
       setPage(savedPage);
       setAssignment(savedAssignment || "");
       
-      // If not admin, fetch assignment if not already saved
-      if (savedUser?.toLowerCase() !== "admin" && !savedAssignment) {
-        getAssignment(savedUser).then(assnData => {
-          if (assnData.success) {
-            setAssignment(assnData.recipient);
-            localStorage.setItem('santa_assignment', assnData.recipient);
-          }
-        });
+      // If not admin, always check for assignment updates on load
+      if (savedUser?.toLowerCase() !== "admin") {
+        checkAssignment(savedUser);
       }
       
       // If on namecodes page, reload the codes
@@ -59,6 +72,13 @@ function App() {
       }
     }
   }, []);
+
+  // Check for assignment updates when landing page is visited by non-admin
+  useEffect(() => {
+    if (page === "landing" && user && user?.toLowerCase() !== "admin") {
+      checkAssignment(user);
+    }
+  }, [page, user]);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -106,13 +126,15 @@ function App() {
       localStorage.setItem('santa_page', 'landing');
       
       if (nameCode?.toLowerCase() !== "admin") {
-        // Fetch assignment
+        // Only fetch existing assignment - don't create new ones
         const assnData = await getAssignment(nameCode);
         if (assnData.success) {
           setAssignment(assnData.recipient);
           localStorage.setItem('santa_assignment', assnData.recipient);
         } else {
-          setAssignment('None assigned');
+          // No assignment yet - show "Wait and Watch"
+          setAssignment('');
+          localStorage.setItem('santa_assignment', '');
         }
       } else {
         setAssignment("");
@@ -160,8 +182,14 @@ function App() {
     setGenMessage("");
     try {
       const data = await generateAssignments(user);
-      if (data.success) setGenMessage('Assignments generated and emailed successfully!');
-      else setGenMessage(data.message || 'Generation failed');
+      if (data.success) {
+        setGenMessage('Assignments generated and emailed successfully!');
+        // Clear any cached assignments so players see their new assignments
+        localStorage.removeItem('santa_assignment');
+        setAssignment('');
+      } else {
+        setGenMessage(data.message || 'Generation failed');
+      }
     } catch (err) {
       setGenMessage('Assignment generation failed.');
     } finally {
@@ -209,7 +237,7 @@ function App() {
             loadingGen={loadingGen}
           />
           {user?.toLowerCase() !== 'admin' && (
-            <AssignmentDisplay assignment={assignment} />
+            <AssignmentDisplay assignment={assignment || ''} />
           )}
         </>
       )}
