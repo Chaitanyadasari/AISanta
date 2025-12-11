@@ -1,4 +1,7 @@
-export const API_URL = 'http://localhost:5000/api';
+// Use relative path for API calls - works in both development and production
+export const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000/api'
+  : '/api';
 
 export async function signup(username, email, password, nameCode) {
   const resp = await fetch(`${API_URL}/signup`, {

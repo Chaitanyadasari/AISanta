@@ -10,14 +10,14 @@
     {
       "username": "saichaitanya52",
       "email": "saichaitanya52@gmail.com",
-      "password": "$2b$10$vokDat/8mhaeDRXs.K/7he5R3ENRzE3lNhlq8m4XQ1BHY5VraaCJa",
+      "password": "$2b$10$4pOUo9Q51RG2R5vKkLweFOVk8b.RC29./r8zKi2cE1Ea8Z08eAXSu",
       "nameCode": "Sai Chaitanya Dasari",
       "isAdmin": false
     },
     {
       "username": "harshivy",
       "email": "harshithavasireddy.2@gmail.com",
-      "password": "$2b$10$iUyvzGt6uSHNqATw0V4SeebYGrVN46HdJckujoUH0nrloA7VQTuTS",
+      "password": "$2b$10$XEF.jtM34gHXESBWytt2relgFpiYJQiYSiEiG/BAUReI3GgftByem",
       "nameCode": "Harshitha Vasireddy",
       "isAdmin": false
     }
