@@ -14,14 +14,26 @@ exports.login = (req, res) => {
     return res.status(400).json({ success: false, message: 'NameCode and Email are required.' });
   }
   const players = getPlayers();
-  const user = players.find(p => p.nameCode.toLowerCase() === nameCode.toLowerCase() && !p.isAdmin);
-  if (!user) {
-    return res.status(404).json({ success: false, message: 'NameCode not found or not a player.' });
+  let user;
+  if (nameCode.toLowerCase() === "admin") {
+    user = players.find(p => p.nameCode.toLowerCase() === "admin" && p.isAdmin);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Admin not found.' });
+    }
+    if (!user.email) {
+      user.email = email;
+      fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
+    }
+    return res.json({ success: true, nameCode: user.nameCode, email: user.email });
+  } else {
+    user = players.find(p => p.nameCode.toLowerCase() === nameCode.toLowerCase() && !p.isAdmin);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'NameCode not found or not a player.' });
+    }
+    if (!user.email) {
+      user.email = email;
+      fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
+    }
+    return res.json({ success: true, nameCode: user.nameCode, email: user.email });
   }
-  // Optionally update email if not present (so player can be contacted)
-  if (!user.email) {
-    user.email = email;
-    fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
-  }
-  return res.json({ success: true, nameCode: user.nameCode, email: user.email });
 };
