@@ -4,7 +4,7 @@ import Landing from './components/Landing';
 import NameCodes from './components/NameCodes';
 import AssignmentDisplay from './components/AssignmentDisplay';
 import Navigation from './components/Navigation';
-import { login, getAssignment, getNameCodes, addPlayer, generateAssignments } from './utils/api';
+import { login, getAssignment, getNameCodes, addPlayer, generateAssignments, resetAssignments } from './utils/api';
 import './App.css';
 
 function App() {
@@ -197,6 +197,29 @@ function App() {
     }
   }
 
+  async function handleResetAssignments() {
+    if (!window.confirm('Are you sure you want to reset all assignments? This will clear all current Secret Santa assignments.')) {
+      return;
+    }
+    setLoadingGen(true);
+    setGenMessage("");
+    try {
+      const data = await resetAssignments(user);
+      if (data.success) {
+        setGenMessage('All assignments have been cleared successfully!');
+        // Clear cached assignments
+        localStorage.removeItem('santa_assignment');
+        setAssignment('');
+      } else {
+        setGenMessage(data.message || 'Reset failed');
+      }
+    } catch (err) {
+      setGenMessage('Assignment reset failed.');
+    } finally {
+      setLoadingGen(false);
+    }
+  }
+
   function logout() {
     setUser(null);
     setAssignment("");
@@ -233,6 +256,7 @@ function App() {
           <Landing
             currentUser={user}
             onGenerateAssignments={handleGenerateAssignments}
+            onResetAssignments={handleResetAssignments}
             genMessage={genMessage}
             loadingGen={loadingGen}
           />

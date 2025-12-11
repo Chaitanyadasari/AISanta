@@ -271,6 +271,19 @@ button:disabled {
   box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
 }
 
+/* Reset button styling */
+.btn-reset {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  width: 100%;
+}
+
+.btn-reset:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
 nav {
   display: flex;
   gap: 15px;
