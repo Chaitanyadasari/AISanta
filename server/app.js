@@ -28,10 +28,10 @@ app.post('/api/reset-assignments', gameController.resetAssignments);
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
   
-  // Catch-all route to serve React app for any non-API routes
-  app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-  });
+ // Catch–all for non-API GETs -> send React index.html
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+});
 }
 
 const PORT = process.env.PORT || 5000;
