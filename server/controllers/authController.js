@@ -1,48 +1,152 @@
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcrypt');
 
 const PLAYERS_FILE = path.join(__dirname, '../models/players.json');
+const SALT_ROUNDS = 10;
 
 function getPlayers() {
   const data = fs.readFileSync(PLAYERS_FILE, 'utf-8');
   return JSON.parse(data).players;
 }
 
-exports.login = (req, res) => {
-  const { nameCode, email } = req.body;
-  if (!nameCode || !email) {
-    return res.status(400).json({ success: false, message: 'NameCode and Email are required.' });
+function savePlayers(players) {
+  fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
+}
+
+// Password strength validation
+function validatePassword(password) {
+  if (password.length < 8) {
+    return { valid: false, message: 'Password must be at least 8 characters long' };
   }
-  const players = getPlayers();
-  let user;
-  if (nameCode.toLowerCase() === "admin") {
-    // Only allow login if email is exactly 'admin@gmail.com'
-    if (email.toLowerCase() !== 'admin@gmail.com') {
-      return res.status(401).json({ success: false, message: 'Invalid admin email/password.' });
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one uppercase letter' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one lowercase letter' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one number' };
+  }
+  return { valid: true };
+}
+
+// Signup endpoint
+exports.signup = async (req, res) => {
+  try {
+    const { username, email, password, nameCode } = req.body;
+    
+    if (!username || !email || !password || !nameCode) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username, email, password, and name are required.' 
+      });
     }
-    user = players.find(p => p.nameCode.toLowerCase() === "admin" && p.isAdmin);
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: passwordValidation.message 
+      });
+    }
+
+    const players = getPlayers();
+    
+    // Check if username already exists
+    if (players.find(p => p.username.toLowerCase() === username.toLowerCase())) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username already exists. Please choose a different username.' 
+      });
+    }
+
+    // Check if email already exists
+    if (players.find(p => p.email.toLowerCase() === email.toLowerCase())) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email already registered. Please use a different email or login.' 
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+    // Create new player
+    const newPlayer = {
+      username: username.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      nameCode: nameCode.trim(),
+      isAdmin: false
+    };
+
+    players.push(newPlayer);
+    savePlayers(players);
+
+    return res.json({ 
+      success: true, 
+      message: 'Account created successfully!',
+      username: newPlayer.username,
+      nameCode: newPlayer.nameCode
+    });
+  } catch (error) {
+    console.error('Signup error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error during signup. Please try again.' 
+    });
+  }
+};
+
+// Login endpoint with password authentication
+exports.login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username and password are required.' 
+      });
+    }
+
+    const players = getPlayers();
+    
+    // Find user by username (case-insensitive)
+    const user = players.find(p => p.username.toLowerCase() === username.toLowerCase());
+    
     if (!user) {
-      return res.status(404).json({ success: false, message: 'Admin not found.' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid username or password.' 
+      });
     }
-    if (!user.email) {
-      user.email = email;
-      fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
+
+    // Verify password
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    
+    if (!passwordMatch) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid username or password.' 
+      });
     }
-    return res.json({ success: true, nameCode: user.nameCode, email: user.email });
-  } else {
-    // Match ignoring all spaces and case for nameCode
-    const normalize = s => (s || '').replace(/\s+/g, '').toLowerCase();
-    user = players.find(p => !p.isAdmin && normalize(p.nameCode) === normalize(nameCode));
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Player Name not found or not a player.' });
-    }
-    // Verify email matches (case-insensitive)
-    if (!user.email) {
-      return res.status(401).json({ success: false, message: 'Email not registered for this player. Please contact admin.' });
-    }
-    if (user.email.toLowerCase() !== email.toLowerCase()) {
-      return res.status(401).json({ success: false, message: 'Invalid email. Email does not match the registered email for this player.' });
-    }
-    return res.json({ success: true, nameCode: user.nameCode, email: user.email });
+
+    // Successful login
+    return res.json({ 
+      success: true, 
+      username: user.username,
+      nameCode: user.nameCode,
+      email: user.email,
+      isAdmin: user.isAdmin || false
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error during login. Please try again.' 
+    });
   }
 };

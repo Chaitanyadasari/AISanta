@@ -16,6 +16,7 @@ const gameController = require('./controllers/gameController');
 const playerController = require('./controllers/playerController');
 
 // API routes
+app.post('/api/signup', authController.signup);
 app.post('/api/login', authController.login);
 app.post('/api/getAssignment', gameController.getAssignment);
 app.get('/api/namecodes', playerController.getNameCodes);

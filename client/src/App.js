@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
+import Signup from './components/Signup';
 import Landing from './components/Landing';
 import NameCodes from './components/NameCodes';
 import AssignmentDisplay from './components/AssignmentDisplay';
 import Navigation from './components/Navigation';
-import { login, getAssignment, getNameCodes, addPlayer, generateAssignments, resetAssignments, deletePlayer } from './utils/api';
+import { signup, login, getAssignment, getNameCodes, addPlayer, generateAssignments, resetAssignments, deletePlayer } from './utils/api';
 import './App.css';
 
 function App() {
@@ -19,6 +20,9 @@ function App() {
   const [userEmail, setUserEmail] = useState(() => {
     return localStorage.getItem('santa_userEmail') || null;
   });
+  const [nameCode, setNameCode] = useState(() => {
+    return localStorage.getItem('santa_nameCode') || null;
+  });
   const [assignment, setAssignment] = useState(() => {
     return localStorage.getItem('santa_assignment') || "";
   });
@@ -29,10 +33,10 @@ function App() {
   const [genMessage, setGenMessage] = useState("");
 
   // Function to check for assignment updates
-  const checkAssignment = async (nameCode) => {
-    if (nameCode?.toLowerCase() !== "admin") {
+  const checkAssignment = async (userNameCode) => {
+    if (userNameCode && userNameCode.toLowerCase() !== "admin") {
       try {
-        const assnData = await getAssignment(nameCode);
+        const assnData = await getAssignment(userNameCode);
         if (assnData.success) {
           setAssignment(assnData.recipient);
           localStorage.setItem('santa_assignment', assnData.recipient);
@@ -51,17 +55,19 @@ function App() {
     const savedUser = localStorage.getItem('santa_user');
     const savedPage = localStorage.getItem('santa_page');
     const savedAssignment = localStorage.getItem('santa_assignment');
+    const savedNameCode = localStorage.getItem('santa_nameCode');
     
-    if (savedUser && savedPage && savedPage !== "login") {
+    if (savedUser && savedPage && savedPage !== "login" && savedPage !== "signup") {
       // User was logged in, restore their session
       setUser(savedUser);
       setUserEmail(localStorage.getItem('santa_userEmail'));
+      setNameCode(savedNameCode);
       setPage(savedPage);
       setAssignment(savedAssignment || "");
       
       // If not admin, always check for assignment updates on load
-      if (savedUser?.toLowerCase() !== "admin") {
-        checkAssignment(savedUser);
+      if (savedNameCode && savedNameCode.toLowerCase() !== "admin") {
+        checkAssignment(savedNameCode);
       }
       
       // If on namecodes page, reload the codes
@@ -75,10 +81,10 @@ function App() {
 
   // Check for assignment updates when landing page is visited by non-admin
   useEffect(() => {
-    if (page === "landing" && user && user?.toLowerCase() !== "admin") {
-      checkAssignment(user);
+    if (page === "landing" && nameCode && nameCode.toLowerCase() !== "admin") {
+      checkAssignment(nameCode);
     }
-  }, [page, user]);
+  }, [page, nameCode]);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -98,6 +104,14 @@ function App() {
   }, [userEmail]);
 
   useEffect(() => {
+    if (nameCode) {
+      localStorage.setItem('santa_nameCode', nameCode);
+    } else {
+      localStorage.removeItem('santa_nameCode');
+    }
+  }, [nameCode]);
+
+  useEffect(() => {
     if (page) {
       localStorage.setItem('santa_page', page);
     }
@@ -111,23 +125,45 @@ function App() {
     }
   }, [assignment]);
 
-  async function handleLogin(nameCode, email) {
+  async function handleSignup(username, email, password, fullName) {
     setLoading(true);
     setError("");
     try {
-      const data = await login(nameCode, email);
+      const data = await signup(username, email, password, fullName);
+      if (!data.success) throw new Error(data.message || 'Signup failed');
+      
+      // Show success message and redirect to login
+      alert('Account created successfully! Please login with your credentials.');
+      setPage("login");
+      localStorage.setItem('santa_page', 'login');
+    } catch (err) {
+      setError(err.message || 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleLogin(username, password) {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await login(username, password);
       if (!data.success) throw new Error(data.message || 'Login failed');
-      setUser(nameCode);
-      setUserEmail(email);
+      
+      setUser(username);
+      setUserEmail(data.email);
+      setNameCode(data.nameCode);
       setPage("landing");
+      
       // Save to localStorage
-      localStorage.setItem('santa_user', nameCode);
-      localStorage.setItem('santa_userEmail', email);
+      localStorage.setItem('santa_user', username);
+      localStorage.setItem('santa_userEmail', data.email);
+      localStorage.setItem('santa_nameCode', data.nameCode);
       localStorage.setItem('santa_page', 'landing');
       
-      if (nameCode?.toLowerCase() !== "admin") {
+      if (data.nameCode?.toLowerCase() !== "admin") {
         // Only fetch existing assignment - don't create new ones
-        const assnData = await getAssignment(nameCode);
+        const assnData = await getAssignment(data.nameCode);
         if (assnData.success) {
           setAssignment(assnData.recipient);
           localStorage.setItem('santa_assignment', assnData.recipient);
@@ -169,18 +205,23 @@ function App() {
       if (!data.success) return { success: false, message: data.message };
       // Re-fetch after add
       await openNameCodes();
-      if (user?.toLowerCase() === "admin" && cbAfter) cbAfter();
-      return { success: true };
+      if (nameCode?.toLowerCase() === "admin" && cbAfter) cbAfter();
+      // Return success with credentials info for display
+      return {
+        success: true,
+        username: data.username,
+        tempPassword: data.tempPassword
+      };
     } catch (err) {
       setError(err.message || 'Failed to add');
       return { success: false, message: err.message };
     }
   }
 
-  async function handleDeletePlayer(nameCode) {
+  async function handleDeletePlayer(playerNameCode) {
     setError("");
     try {
-      const data = await deletePlayer(nameCode);
+      const data = await deletePlayer(playerNameCode);
       if (!data.success) return { success: false, message: data.message };
       // Re-fetch after delete
       await openNameCodes();
@@ -195,7 +236,7 @@ function App() {
     setLoadingGen(true); 
     setGenMessage("");
     try {
-      const data = await generateAssignments(user);
+      const data = await generateAssignments(nameCode);
       if (data.success) {
         setGenMessage('Assignments generated and emailed successfully!');
         // Clear any cached assignments so players see their new assignments
@@ -218,7 +259,7 @@ function App() {
     setLoadingGen(true);
     setGenMessage("");
     try {
-      const data = await resetAssignments(user);
+      const data = await resetAssignments(nameCode);
       if (data.success) {
         setGenMessage('All assignments have been cleared successfully!');
         // Clear cached assignments
@@ -241,21 +282,42 @@ function App() {
     setCodes([]);
     setError("");
     setUserEmail(null);
+    setNameCode(null);
     // Clear all session data from localStorage
     localStorage.removeItem('santa_user');
     localStorage.removeItem('santa_userEmail');
+    localStorage.removeItem('santa_nameCode');
     localStorage.removeItem('santa_page');
     localStorage.removeItem('santa_assignment');
   }
 
   return (
-    <div className={page !== "login" ? "app-container" : ""}>
+    <div className={page !== "login" && page !== "signup" ? "app-container" : ""}>
       {page === "login" && (
         <div className="login-wrapper">
-          <Login onLogin={handleLogin} error={error} />
+          <Login 
+            onLogin={handleLogin} 
+            onGoToSignup={() => {
+              setPage("signup");
+              setError("");
+            }}
+            error={error} 
+          />
         </div>
       )}
-      {page !== "login" && (
+      {page === "signup" && (
+        <div className="login-wrapper">
+          <Signup 
+            onSignup={handleSignup}
+            onBackToLogin={() => {
+              setPage("login");
+              setError("");
+            }}
+            error={error}
+          />
+        </div>
+      )}
+      {page !== "login" && page !== "signup" && (
         <Navigation
           onHome={() => {
             setPage("landing");
@@ -268,13 +330,13 @@ function App() {
       {page === "landing" && user && (
         <>
           <Landing
-            currentUser={user}
+            currentUser={nameCode || user}
             onGenerateAssignments={handleGenerateAssignments}
             onResetAssignments={handleResetAssignments}
             genMessage={genMessage}
             loadingGen={loadingGen}
           />
-          {user?.toLowerCase() !== 'admin' && (
+          {nameCode?.toLowerCase() !== 'admin' && (
             <AssignmentDisplay assignment={assignment || ''} />
           )}
         </>
@@ -284,7 +346,7 @@ function App() {
           codes={codes}
           onAdd={handleAddName}
           onDelete={handleDeletePlayer}
-          isAdmin={user?.toLowerCase() === 'admin'}
+          isAdmin={nameCode?.toLowerCase() === 'admin'}
           error={error}
           onAddSuccess={() => {
             setPage("landing");

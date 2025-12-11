@@ -17,48 +17,80 @@ body, html {
 }
 
 .login-page-container {
-  max-width: 900px;
+  max-width: 1000px;
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 2.5rem;
   animation: fadeInUp 0.6s ease-out;
+  padding: 0 20px;
 }
 
 .login-image-section {
-  flex: 1;
-  max-width: 400px;
+  flex: 0 0 45%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
 }
 
 .login-image {
   width: 100%;
   height: auto;
+  aspect-ratio: 3/4;
+  max-height: 650px;
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   object-fit: cover;
+  object-position: center;
 }
 
 /* Responsive design for login */
+@media (max-width: 1024px) {
+  .login-page-container {
+    gap: 1.5rem;
+  }
+  
+  .login-image {
+    max-height: 500px;
+  }
+}
+
 @media (max-width: 768px) {
   .login-page-container {
     flex-direction: column;
-    max-width: 420px;
+    max-width: 500px;
+    gap: 1.5rem;
   }
   
   .login-image-section {
-    max-width: 300px;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .login-image {
+    max-height: 250px;
+    width: 100%;
+    object-fit: cover;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-page-container {
+    padding: 0 10px;
   }
   
   .login-image {
     max-height: 200px;
-    width: auto;
   }
 }
 
 .login-page {
-  max-width: 420px;
+  flex: 0 0 50%;
+  max-width: 500px;
+  min-width: 320px;
   width: 100%;
-  padding: 3rem 2.5rem 1.5rem 2.5rem;
+  padding: 2.5rem 2rem 1.5rem 2rem;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 20px;
@@ -67,6 +99,19 @@ body, html {
   position: relative;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .login-page {
+    padding: 2.5rem 2rem 1.5rem 2rem;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+  }
 }
 
 @keyframes fadeInUp {
@@ -544,4 +589,53 @@ ul li:hover {
 
 input[placeholder] {
   padding-right: 16px;
+}
+
+/* Password input styles */
+.login-page input[type="password"] {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  margin-top: 2px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  background: #f8f9fa;
+}
+
+.login-page input[type="password"]:focus {
+  outline: none;
+  border-color: #667eea;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Password strength indicator */
+.password-strength {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.password-strength.weak {
+  background: #fee;
+  color: #c53030;
+  border-left: 4px solid #fc8181;
+}
+
+.password-strength.medium {
+  background: #fef5e7;
+  color: #975a16;
+  border-left: 4px solid #f6ad55;
+}
+
+.password-strength.strong {
+  background: #d4edda;
+  color: #155724;
+  border-left: 4px solid #48bb78;
 }

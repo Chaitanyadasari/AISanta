@@ -4,7 +4,7 @@ function Navigation({ onHome, onNameCodes, onLogout }) {
   return (
     <nav>
       <button onClick={onHome}>🏠 Home</button>
-      <button onClick={onNameCodes}>👥 NameCodes</button>
+      <button onClick={onNameCodes}>👥 Players</button>
       <button onClick={onLogout}>🚪 Logout</button>
     </nav>
   );

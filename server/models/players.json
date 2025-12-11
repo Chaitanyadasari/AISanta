@@ -1,18 +1,24 @@
 {
   "players": [
     {
-      "nameCode": "Admin",
+      "username": "admin",
       "email": "admin@gmail.com",
+      "password": "$2b$10$FX7tfyZMQY4lA51/WIYbdOTtbXVeR9xrAsFJsAX91cd.LyjSakDVe",
+      "nameCode": "Admin",
       "isAdmin": true
     },
     {
-      "nameCode": "Harshitha Vasireddy",
-      "email": "harshithavasireddy.2@gmail.com",
+      "username": "saichaitanya52",
+      "email": "saichaitanya52@gmail.com",
+      "password": "$2b$10$vokDat/8mhaeDRXs.K/7he5R3ENRzE3lNhlq8m4XQ1BHY5VraaCJa",
+      "nameCode": "Sai Chaitanya Dasari",
       "isAdmin": false
     },
     {
-      "nameCode": "Chaitanya Dasari",
-      "email": "saichaitanya52@gmail.com",
+      "username": "harshivy",
+      "email": "harshithavasireddy.2@gmail.com",
+      "password": "$2b$10$iUyvzGt6uSHNqATw0V4SeebYGrVN46HdJckujoUH0nrloA7VQTuTS",
+      "nameCode": "Harshitha Vasireddy",
       "isAdmin": false
     }
   ]

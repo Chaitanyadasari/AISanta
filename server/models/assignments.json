@@ -1,12 +1,12 @@
 {
   "assignments": [
     {
-      "santa": "Harshitha Vasireddy",
-      "recipient": "Chaitanya Dasari"
+      "santa": "Sai Chaitanya Dasari",
+      "recipient": "Harshitha Vasireddy"
     },
     {
-      "santa": "Chaitanya Dasari",
-      "recipient": "Harshitha Vasireddy"
+      "santa": "Harshitha Vasireddy",
+      "recipient": "Sai Chaitanya Dasari"
     }
   ]
 }

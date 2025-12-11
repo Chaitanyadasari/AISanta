@@ -1,10 +1,19 @@
 export const API_URL = 'http://localhost:5000/api';
 
-export async function login(nameCode, email) {
+export async function signup(username, email, password, nameCode) {
+  const resp = await fetch(`${API_URL}/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, email, password, nameCode })
+  });
+  return resp.json();
+}
+
+export async function login(username, password) {
   const resp = await fetch(`${API_URL}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nameCode, email })
+    body: JSON.stringify({ username, password })
   });
   return resp.json();
 }
@@ -58,4 +67,3 @@ export async function deletePlayer(nameCode) {
   });
   return resp.json();
 }
-

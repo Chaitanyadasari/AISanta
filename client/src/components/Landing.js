@@ -8,7 +8,7 @@ function Landing({ currentUser, onGenerateAssignments, onResetAssignments, genMe
         {currentUser?.toLowerCase() === 'admin' ? (
           <>
             <p style={{fontSize:'1.1rem', color:'#4a5568', marginBottom:'2rem'}}>
-              Click 'NameCodes' to view/add players. Use the buttons below to manage Secret Santa assignments.
+              Click 'Players' to view/add players. Use the buttons below to manage Secret Santa assignments.
             </p>
             <div style={{marginBottom:20}}>
               <button
