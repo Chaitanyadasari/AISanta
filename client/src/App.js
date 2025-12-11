@@ -28,26 +28,25 @@ function Login({ onLogin, error }) {
   );
 }
 
-function Landing({ currentUser, assignment }) {
+function Landing({ currentUser, onAddNameCodes }) {
   return (
     <div className="landing-page">
       <h3>Welcome, {currentUser}</h3>
-      {currentUser === 'Admin' ? (
-        <p>Click 'NameCodes' to add/view players.</p>
-      ) : assignment ? (
-        <p>You are Secret Santa for: <strong>{assignment}</strong></p>
-      ) : (
-        <p>Loading assignment...</p>
-      )}
+      {currentUser?.toLowerCase() === 'admin' ? (
+        <>
+          <p>Click 'NameCodes' to view all, or use button below to add players.</p>
+          <button onClick={onAddNameCodes} style={{marginBottom:20}}>Add NameCodes</button>
+        </>
+      ) : null}
     </div>
   );
 }
 
-function NameCodes({ codes, onAdd, isAdmin, error }) {
+function NameCodes({ codes, onAdd, isAdmin, error, onAddSuccess }) {
   const [newName, setNewName] = useState("");
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (newName.trim()) {
-      onAdd(newName.trim());
+      await onAdd(newName.trim(), onAddSuccess);
       setNewName("");
     }
   };
@@ -122,7 +121,7 @@ function App() {
       setLoading(false);
     }
   }
-  async function handleAddName(newName) {
+  async function handleAddName(newName, cbAfter) {
     setError("");
     try {
       const resp = await fetch(`${API_URL}/namecodes`, {
@@ -133,7 +132,8 @@ function App() {
       const data = await resp.json();
       if (!data.success) throw new Error(data.message || 'Could not add');
       // Re-fetch after add
-      openNameCodes();
+      await openNameCodes();
+      if (user === "Admin" && cbAfter) cbAfter();
     } catch (err) {
       setError(err.message || 'Failed to add');
     }
@@ -153,16 +153,22 @@ function App() {
       {page === "login" && <Login onLogin={handleLogin} error={error} />}
       {page !== "login" && (
         <nav>
-          {user === 'Admin' && <button onClick={()=>setPage("landing")}>Home</button>}
+          <button onClick={()=>setPage("landing")}>Home</button>
           <button onClick={openNameCodes}>NameCodes</button>
           <button onClick={logout}>Logout</button>
         </nav>
       )}
       {page === "landing" && user && (
-        <Landing currentUser={user} assignment={assignment} />
+        <Landing currentUser={user} onAddNameCodes={()=>setPage("namecodes")} />
       )}
       {page === "namecodes" && (
-        <NameCodes codes={codes} onAdd={handleAddName} isAdmin={user==="Admin"} error={error} />
+        <NameCodes 
+          codes={codes} 
+          onAdd={handleAddName} 
+          isAdmin={user?.toLowerCase() === 'admin'} 
+          error={error} 
+          onAddSuccess={()=>setPage("landing")}
+        />
       )}
       {isLoading && <div className="loading">Loading...</div>}
     </div>
