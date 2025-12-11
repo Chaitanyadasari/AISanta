@@ -1,6 +1,11 @@
 {
   "players": [
     {
+      "nameCode": "Admin",
+      "email": "admin@gmail.com",
+      "isAdmin": true
+    },
+    {
       "nameCode": "HarshithaVasireddy",
       "email": "harshithavasireddy.2@gmail.com",
       "isAdmin": false
