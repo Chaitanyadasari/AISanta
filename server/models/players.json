@@ -6,7 +6,7 @@
       "isAdmin": true
     },
     {
-      "nameCode": "HarshithaVasireddy",
+      "nameCode": "Harshitha Vasireddy",
       "email": "harshithavasireddy.2@gmail.com",
       "isAdmin": false
     },
@@ -18,11 +18,6 @@
     {
       "nameCode": "Chaitanya Dasari",
       "email": "chay.dasari52@gmail.com",
-      "isAdmin": false
-    },
-    {
-      "nameCode": "Lakshmi Venkatesh K",
-      "email": "test@gmail.com",
       "isAdmin": false
     }
   ]
