@@ -889,15 +889,15 @@ from collections import defaultdict, Counter
 class Solution:
     def mostVisitedPattern(self, username, timestamp, website):
         
-        # Step 1: Sort visits by timestamp
+        # Step 1: sort all entries by timestamp
         visits = sorted(zip(timestamp, username, website))
         
-        # Step 2: Build per-user visit history
+        # Step 2: build visit history per user
         user_history = defaultdict(list)
         for time, user, site in visits:
             user_history[user].append(site)
         
-        # Step 3: Count patterns
+        # Step 3: count all unique 3-sequences per user
         pattern_count = Counter()
         
         for user, sites in user_history.items():
@@ -907,23 +907,27 @@ class Solution:
             
             seen_patterns = set()
             
-            # Correct index iteration for triples i < j < k
+            # generate all (i, j, k) combinations: i < j < k
             for i in range(n - 2):
                 for j in range(i + 1, n - 1):
                     for k in range(j + 1, n):
-                        seen_patterns.add((sites[i], sites[j], sites[k]))
+                        pattern = (sites[i], sites[j], sites[k])
+                        seen_patterns.add(pattern)
             
-            # Each pattern counted once per user
-            for pat in seen_patterns:
-                pattern_count[pat] += 1
+            # count each pattern once per user
+            for pattern in seen_patterns:
+                pattern_count[pattern] += 1
         
-        # Step 4: Find best pattern
-        best_pattern = sorted(
-            pattern_count,
-            key=lambda p: (-pattern_count[p], p)
-        )[0]
+        # Step 4: manually find best pattern (most users → lexicographically smallest)
+        best = None
+        best_count = 0
         
-        return list(best_pattern)
+        for pattern, count in pattern_count.items():
+            if count > best_count or (count == best_count and (best is None or pattern < best)):
+                best = pattern
+                best_count = count
+        
+        return list(best)
 ```
 
 The triple nested loops generate all 3-website combinations for each user.
