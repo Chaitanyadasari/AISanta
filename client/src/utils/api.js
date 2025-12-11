@@ -50,3 +50,12 @@ export async function resetAssignments(nameCode) {
   return resp.json();
 }
 
+export async function deletePlayer(nameCode) {
+  const resp = await fetch(`${API_URL}/namecodes`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nameCode })
+  });
+  return resp.json();
+}
+

@@ -2,14 +2,18 @@
   "name": "aisanta",
   "version": "1.0.0",
   "description": "A new project to use for our internal gaming for secret santa",
-  "main": "index.js",
+  "main": "server/app.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
+    "start": "node server/app.js",
+    "dev": "node server/app.js",
+    "build": "cd client && npm install && npm run build",
+    "install-all": "npm install && cd client && npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["secret-santa", "gift-exchange", "christmas"],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -17,5 +21,9 @@
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "nodemailer": "^7.0.11"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
   }
 }

@@ -34,3 +34,26 @@ exports.addNameCode = (req, res) => {
   writePlayers(players);
   res.json({ success: true, message: 'NameCode and email added' });
 };
+
+exports.deleteNameCode = (req, res) => {
+  const { nameCode } = req.body;
+  if (!nameCode) {
+    return res.status(400).json({ success: false, message: 'NameCode is required' });
+  }
+  
+  // Prevent deletion of admin
+  if (nameCode.toLowerCase() === 'admin') {
+    return res.status(400).json({ success: false, message: 'Cannot delete admin user' });
+  }
+  
+  const players = getPlayers();
+  const playerIndex = players.findIndex(p => p.nameCode.toLowerCase() === nameCode.toLowerCase() && !p.isAdmin);
+  
+  if (playerIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Player not found' });
+  }
+  
+  players.splice(playerIndex, 1);
+  writePlayers(players);
+  res.json({ success: true, message: 'Player deleted successfully' });
+};

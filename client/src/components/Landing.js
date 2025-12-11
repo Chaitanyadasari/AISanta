@@ -1,12 +1,8 @@
 import React from 'react';
-import landingImage from '../images/landingPage.jpg';
 
 function Landing({ currentUser, onGenerateAssignments, onResetAssignments, genMessage, loadingGen }) {
   return (
     <div className="landing-page-container">
-      <div className="landing-image-section">
-        <img src={landingImage} alt="AI Santa" className="landing-image" />
-      </div>
       <div className="landing-page">
         <h3>🎅 Welcome, {currentUser}!</h3>
         {currentUser?.toLowerCase() === 'admin' ? (
