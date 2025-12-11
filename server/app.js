@@ -28,7 +28,8 @@ app.post('/api/reset-assignments', gameController.resetAssignments);
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
   
-  app.get('*', (req, res) => {
+  // Catch-all route to serve React app for any non-API routes
+  app.get('/*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
   });
 }
