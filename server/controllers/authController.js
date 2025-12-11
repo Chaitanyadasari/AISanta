@@ -30,7 +30,9 @@ exports.login = (req, res) => {
     }
     return res.json({ success: true, nameCode: user.nameCode, email: user.email });
   } else {
-    user = players.find(p => p.nameCode.toLowerCase() === nameCode.toLowerCase() && !p.isAdmin);
+    // Match ignoring all spaces and case
+    const normalize = s => (s || '').replace(/\s+/g, '').toLowerCase();
+    user = players.find(p => !p.isAdmin && normalize(p.nameCode) === normalize(nameCode));
     if (!user) {
       return res.status(404).json({ success: false, message: 'NameCode not found or not a player.' });
     }

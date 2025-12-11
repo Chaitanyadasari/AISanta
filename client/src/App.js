@@ -28,17 +28,36 @@ function Login({ onLogin, error }) {
   );
 }
 
-function Landing({ currentUser, onAddNameCodes, onGenerateAssignments, genMessage, loadingGen }) {
+function Landing({ currentUser, onGenerateAssignments, genMessage, loadingGen }) {
   return (
     <div className="landing-page">
-      <h3>Welcome, {currentUser}</h3>
+      <h3>🎅 Welcome, {currentUser}!</h3>
       {currentUser?.toLowerCase() === 'admin' ? (
         <>
-          <p>Click 'NameCodes' to view all, or use button below to add players.</p>
-          <button onClick={onAddNameCodes} style={{marginBottom:20}}>Add NameCodes</button>
+          <p style={{fontSize:'1.1rem', color:'#4a5568', marginBottom:'2rem'}}>
+            Click 'NameCodes' to view/add players. Use the button below to generate Secret Santa assignments.
+          </p>
           <div style={{marginBottom:20}}>
-            <button onClick={onGenerateAssignments} disabled={loadingGen} style={{background:'#e36c19', color:'white'}}>Generate Assignments</button>
-            {genMessage && <div style={{fontSize:'0.97em',marginTop:5,color:genMessage.includes('success')?'green':'#b81212'}}>{genMessage}</div>}
+            <button 
+              onClick={onGenerateAssignments} 
+              disabled={loadingGen} 
+              className="btn-generate"
+            >
+              {loadingGen ? '⏳ Generating...' : '🎁 Generate Assignments'}
+            </button>
+            {genMessage && (
+              <div style={{
+                fontSize:'0.97em',
+                marginTop:15,
+                padding:'12px 16px',
+                borderRadius:'10px',
+                color: genMessage.includes('success') ? '#155724' : '#b81212',
+                background: genMessage.includes('success') ? '#d4edda' : '#f8d7da',
+                borderLeft: `4px solid ${genMessage.includes('success') ? '#28a745' : '#dc3545'}`
+              }}>
+                {genMessage.includes('success') ? '✅ ' : '❌ '}{genMessage}
+              </div>
+            )}
           </div>
         </>
       ) : null}
@@ -66,14 +85,23 @@ function NameCodes({ codes, onAdd, isAdmin, error, onAddSuccess }) {
   };
   return (
     <div className="namecodes-page">
-      <h3>All NameCodes:</h3>
-      <ul>{codes.map(name => <li key={name}>{name}</li>)}</ul>
+      <h3>👥 All NameCodes</h3>
+      {codes.length > 0 ? (
+        <ul>{codes.map(name => <li key={name}>{name}</li>)}</ul>
+      ) : (
+        <p style={{color:'#718096', fontSize:'1.1rem', marginTop:'2rem'}}>No players added yet. Add your first player below!</p>
+      )}
       {isAdmin && (
-        <div style={{marginTop:20}}>
-          <input value={newName} placeholder="Add new name" onChange={e=>setNewName(e.target.value)} />
-          <input value={newEmail} placeholder="Add email" type="email" style={{marginLeft:8}} onChange={e=>setNewEmail(e.target.value)} />
-          <button onClick={handleAdd}>Save</button>
-          {addMsg && <div style={{marginTop:5, fontSize:'0.92em', color:addMsg.includes('added')?'green':'#a10202'}}>{addMsg}</div>}
+        <div className="namecodes-form">
+          <h4 style={{marginTop:0, marginBottom:'1rem', color:'#4a5568'}}>➕ Add New Player</h4>
+          <input value={newName} placeholder="Enter NameCode" onChange={e=>setNewName(e.target.value)} />
+          <input value={newEmail} placeholder="Enter Email Address" type="email" onChange={e=>setNewEmail(e.target.value)} />
+          <button onClick={handleAdd}>💾 Save Player</button>
+          {addMsg && (
+            <div className={addMsg.includes('added') ? 'success-message' : 'error'} style={{marginTop:10}}>
+              {addMsg.includes('added') ? '✅ ' : '❌ '}{addMsg}
+            </div>
+          )}
         </div>
       )}
       {error && <div className="error">{error}</div>}
@@ -186,23 +214,35 @@ function App() {
   }
 
   return (
-    <div>
-      {page === "login" && <Login onLogin={handleLogin} error={error} />}
+    <div className={page !== "login" ? "app-container" : ""}>
+      {page === "login" && (
+        <div className="login-wrapper">
+          <Login onLogin={handleLogin} error={error} />
+        </div>
+      )}
       {page !== "login" && (
         <nav>
-          <button onClick={()=>setPage("landing")}>Home</button>
-          <button onClick={openNameCodes}>NameCodes</button>
-          <button onClick={logout}>Logout</button>
+          <button onClick={()=>setPage("landing")}>🏠 Home</button>
+          <button onClick={openNameCodes}>👥 NameCodes</button>
+          <button onClick={logout}>🚪 Logout</button>
         </nav>
       )}
       {page === "landing" && user && (
-        <Landing
-          currentUser={user}
-          onAddNameCodes={()=>setPage("namecodes")}
-          onGenerateAssignments={handleGenerateAssignments}
-          genMessage={genMessage}
-          loadingGen={loadingGen}
-        />
+        <>
+          <Landing
+            currentUser={user}
+            onGenerateAssignments={handleGenerateAssignments}
+            genMessage={genMessage}
+            loadingGen={loadingGen}
+          />
+          {user?.toLowerCase() !== 'admin' && assignment && assignment !== 'None assigned' && (
+            <div className="assignment-display">
+              <span className="santa-icon">🎁</span>
+              <h3>You are Secret Santa for:</h3>
+              <span className="assignment-name">{assignment}</span>
+            </div>
+          )}
+        </>
       )}
       {page === "namecodes" && (
         <NameCodes
@@ -213,12 +253,7 @@ function App() {
           onAddSuccess={()=>setPage("landing")}
         />
       )}
-      {user && user?.toLowerCase() !== 'admin' && page === 'landing' && assignment && (
-        <div className="landing-page" style={{marginTop:32}}>
-          <h3>You are Secret Santa for: <span style={{color:'#0347ac'}}>{assignment}</span></h3>
-        </div>
-      )}
-      {isLoading && <div className="loading">Loading...</div>}
+      {isLoading && <div className="loading">⏳ Loading...</div>}
     </div>
   );
 }
