@@ -4,7 +4,7 @@ import Landing from './components/Landing';
 import NameCodes from './components/NameCodes';
 import AssignmentDisplay from './components/AssignmentDisplay';
 import Navigation from './components/Navigation';
-import { login, getAssignment, getNameCodes, addPlayer, generateAssignments, resetAssignments } from './utils/api';
+import { login, getAssignment, getNameCodes, addPlayer, generateAssignments, resetAssignments, deletePlayer } from './utils/api';
 import './App.css';
 
 function App() {
@@ -177,6 +177,20 @@ function App() {
     }
   }
 
+  async function handleDeletePlayer(nameCode) {
+    setError("");
+    try {
+      const data = await deletePlayer(nameCode);
+      if (!data.success) return { success: false, message: data.message };
+      // Re-fetch after delete
+      await openNameCodes();
+      return { success: true };
+    } catch (err) {
+      setError(err.message || 'Failed to delete');
+      return { success: false, message: err.message };
+    }
+  }
+
   async function handleGenerateAssignments() {
     setLoadingGen(true); 
     setGenMessage("");
@@ -269,6 +283,7 @@ function App() {
         <NameCodes
           codes={codes}
           onAdd={handleAddName}
+          onDelete={handleDeletePlayer}
           isAdmin={user?.toLowerCase() === 'admin'}
           error={error}
           onAddSuccess={() => {
