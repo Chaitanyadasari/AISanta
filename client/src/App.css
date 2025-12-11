@@ -16,6 +16,45 @@ body, html {
   box-sizing: border-box;
 }
 
+.login-page-container {
+  max-width: 900px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.login-image-section {
+  flex: 1;
+  max-width: 400px;
+}
+
+.login-image {
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  object-fit: cover;
+}
+
+/* Responsive design for login */
+@media (max-width: 768px) {
+  .login-page-container {
+    flex-direction: column;
+    max-width: 420px;
+  }
+  
+  .login-image-section {
+    max-width: 300px;
+  }
+  
+  .login-image {
+    max-height: 200px;
+    width: auto;
+  }
+}
+
 .login-page {
   max-width: 420px;
   width: 100%;
@@ -144,6 +183,29 @@ body, html {
   padding-bottom: 50px;
 }
 
+.landing-page-container {
+  max-width: 1000px;
+  margin: 40px auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  animation: fadeInUp 0.6s ease-out;
+  padding: 0 20px;
+}
+
+.landing-image-section {
+  flex: 1;
+  max-width: 400px;
+}
+
+.landing-image {
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  object-fit: cover;
+}
+
 .landing-page, .namecodes-page {
   max-width: 600px;
   margin: 40px auto;
@@ -154,6 +216,33 @@ body, html {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   animation: fadeInUp 0.6s ease-out;
   text-align: center;
+}
+
+.landing-page-container .landing-page {
+  flex: 1;
+  margin: 0;
+}
+
+/* Responsive design for landing page */
+@media (max-width: 768px) {
+  .landing-page-container {
+    flex-direction: column;
+    max-width: 600px;
+  }
+  
+  .landing-image-section {
+    max-width: 300px;
+    align-self: center;
+  }
+  
+  .landing-image {
+    max-height: 200px;
+    width: auto;
+  }
+  
+  .landing-page-container .landing-page {
+    width: 100%;
+  }
 }
 
 .landing-page h3 {
