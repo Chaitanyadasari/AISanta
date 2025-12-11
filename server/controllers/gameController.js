@@ -24,26 +24,8 @@ exports.getAssignment = async (req, res) => {
   if (assignment) {
     return res.json({ success: true, recipient: assignment.recipient });
   }
-  const players = getPlayers();
-  const user = players.find(p => p.nameCode === nameCode);
-  const allNames = players.map(p => p.nameCode);
-  const taken = assignments.map(a => a.recipient);
-  const available = allNames.filter(n => n !== nameCode && !taken.includes(n));
-  if (available.length === 0) {
-    return res.status(400).json({ success: false, message: 'No available assignment' });
-  }
-  const recipient = available[Math.floor(Math.random() * available.length)];
-  assignments.push({ santa: nameCode, recipient });
-  writeAssignments(assignments);
-  // Send email only for new assignments
-  if (user && user.email) {
-    try {
-      await sendAssignmentEmail(user.email, recipient);
-    } catch (err) {
-      // Could add logging here
-    }
-  }
-  return res.json({ success: true, recipient });
+  // No assignment exists yet - return success: false to indicate waiting
+  return res.json({ success: false, message: 'No assignment yet. Please wait for admin to generate assignments.' });
 };
 
 exports.generateAssignments = async (req, res) => {
@@ -56,33 +38,65 @@ exports.generateAssignments = async (req, res) => {
   if (players.length < 2) {
     return res.status(400).json({ success: false, message: 'Not enough players for assignments' });
   }
-  // Only non-admins
+  // Only non-admins - always reshuffle everyone
   const santas = players.filter(p => !p.isAdmin);
   let recipients = [...santas.map(p => p.nameCode)];
   let assignments = [];
-  // shuffle helper
-  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
-  shuffle(recipients);
-  // Prevent self-assignment and duplicate recipients
-  for (let i = 0; i < santas.length; ++i) {
-    let santa = santas[i].nameCode;
-    // Avoid self-assign
-    let options = recipients.filter(r => r !== santa);
-    if (options.length === 0) {
-      // restart if stuck (rare for >2)
-      return res.status(500).json({ success: false, message: 'Assignment failed. Please try again.' });
+  
+  // Shuffle helper function
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    let recipient = options[0];
-    assignments.push({ santa, recipient });
-    recipients = recipients.filter(r => r !== recipient);
   }
+  
+  // Keep trying until we get a valid assignment (no self-assignments)
+  let attempts = 0;
+  const maxAttempts = 100;
+  
+  while (attempts < maxAttempts) {
+    assignments = [];
+    recipients = [...santas.map(p => p.nameCode)];
+    shuffle(recipients);
+    
+    let valid = true;
+    for (let i = 0; i < santas.length; i++) {
+      let santa = santas[i].nameCode;
+      let options = recipients.filter(r => r !== santa);
+      
+      if (options.length === 0) {
+        valid = false;
+        break;
+      }
+      
+      let recipient = options[0];
+      assignments.push({ santa, recipient });
+      recipients = recipients.filter(r => r !== recipient);
+    }
+    
+    if (valid) break;
+    attempts++;
+  }
+  
+  if (attempts >= maxAttempts) {
+    return res.status(500).json({ success: false, message: 'Assignment failed. Please try again.' });
+  }
+  
+  // Clear old assignments and write new ones (reshuffle everyone)
   writeAssignments(assignments);
-  // Send emails
+  
+  // Send emails to all players
   for (const a of assignments) {
     const santaPlayer = santas.find(p => p.nameCode === a.santa);
     if (santaPlayer && santaPlayer.email) {
-      try { await sendAssignmentEmail(santaPlayer.email, a.recipient); } catch {}
+      try { 
+        await sendAssignmentEmail(santaPlayer.email, a.recipient); 
+      } catch (err) {
+        // Log error but continue
+      }
     }
   }
+  
   res.json({ success: true, message: 'Assignments generated and emailed', assignments });
 };

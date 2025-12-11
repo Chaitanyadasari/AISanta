@@ -34,6 +34,10 @@ function Login({ onLogin, error }) {
         <button type="submit">Login</button>
       </form>
       {error && <div className="error">{error}</div>}
+      <div className="login-footer">
+        <p>Developed by <strong>Chaitanya Dasari</strong></p>
+        <p>All rights reserved</p>
+      </div>
     </div>
   );
 }
