@@ -2,8 +2,18 @@
   "players": [
     {
       "nameCode": "Admin",
-      "email": null,
+      "email": "sai@gmail.com",
       "isAdmin": true
+    },
+    {
+      "nameCode": "HarshithaVasireddy",
+      "email": "harshithavasireddy.2@gmail.com",
+      "isAdmin": false
+    },
+    {
+      "nameCode": "Hitesh Sannithi",
+      "email": null,
+      "isAdmin": false
     }
   ]
 }

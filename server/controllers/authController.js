@@ -16,6 +16,10 @@ exports.login = (req, res) => {
   const players = getPlayers();
   let user;
   if (nameCode.toLowerCase() === "admin") {
+    // Only allow login if email is exactly 'admin@gmail.com'
+    if (email.toLowerCase() !== 'admin@gmail.com') {
+      return res.status(401).json({ success: false, message: 'Invalid admin email/password.' });
+    }
     user = players.find(p => p.nameCode.toLowerCase() === "admin" && p.isAdmin);
     if (!user) {
       return res.status(404).json({ success: false, message: 'Admin not found.' });
