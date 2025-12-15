@@ -23,17 +23,34 @@ if (useAzureAI) {
   console.log('⚠️  Chatbot using template responses (no Azure OpenAI)');
 }
 
-// Call Azure OpenAI
-async function callAzureAI(systemPrompt, userPrompt, temperature = 0.7) {
+// Call Azure OpenAI with conversation context
+async function callAzureAI(systemPrompt, userPrompt, temperature = 0.7, conversationHistory = []) {
   if (!azureClient) {
     throw new Error('Azure OpenAI not configured');
   }
 
+  // Build messages array with conversation history
+  const messages = [
+    { role: 'system', content: systemPrompt }
+  ];
+
+  // Add recent conversation history (last 5 messages for context)
+  if (conversationHistory && conversationHistory.length > 0) {
+    const recentHistory = conversationHistory.slice(-5);
+    for (const msg of recentHistory) {
+      if (msg.userId === 'santa-bot') {
+        messages.push({ role: 'assistant', content: msg.message });
+      } else {
+        messages.push({ role: 'user', content: `${msg.username}: ${msg.message}` });
+      }
+    }
+  }
+
+  // Add current user prompt
+  messages.push({ role: 'user', content: userPrompt });
+
   const result = await azureClient.chat.completions.create({
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ],
+    messages: messages,
     model: 'gpt-4o-mini',
     temperature: temperature,
     max_tokens: 500,
@@ -122,7 +139,7 @@ const chatbotController = {
   callAzureAI: callAzureAI,
   useAzureAI: useAzureAI,
   
-  async processMessage(messageText, userName) {
+  async processMessage(messageText, userName, chatHistory = []) {
     try {
       const command = detectCommand(messageText);
       
@@ -149,13 +166,13 @@ const chatbotController = {
           
           if (useAzureAI) {
             try {
-              const systemPrompt = `You are Santa's gift advisor. Provide 4-5 specific, creative gift ideas. Format as a numbered list.`;
+              const systemPrompt = `You are Santa's gift advisor. Provide 4-5 specific, creative gift ideas with brief descriptions. Format as a numbered list. Be helpful and remember previous conversation context.`;
               const userPrompt = `Suggest Secret Santa gifts for ${giftParams.recipientName}.
 ${giftParams.interests ? `They like: ${giftParams.interests}` : ''}
 ${giftParams.budget ? `Budget: ${giftParams.budget}` : 'Budget: $20-50'}`;
 
               console.log('🤖 Calling Azure AI for gift suggestions...');
-              const aiResponse = await callAzureAI(systemPrompt, userPrompt, 0.7);
+              const aiResponse = await callAzureAI(systemPrompt, userPrompt, 0.6, chatHistory);
               console.log('✅ Azure AI gift response received');
               return {
                 response: `🎁 **Gift ideas for ${giftParams.recipientName}**:\n\n${aiResponse}`,
@@ -186,10 +203,10 @@ ${giftParams.budget ? `Budget: ${giftParams.budget}` : 'Budget: $20-50'}`;
           
           if (useAzureAI) {
             try {
-              const systemPrompt = `You are Santa. Write a brief ${messageParams.tone} holiday message (2-3 sentences) with emojis.`;
+              const systemPrompt = `You are Santa. Write a brief ${messageParams.tone} holiday message (2-3 sentences) with emojis. Consider any context from previous messages.`;
               const userPrompt = `Write a ${messageParams.tone} holiday message for ${messageParams.recipientName}.`;
 
-              const aiResponse = await callAzureAI(systemPrompt, userPrompt, 0.9);
+              const aiResponse = await callAzureAI(systemPrompt, userPrompt, 0.9, chatHistory);
               return {
                 response: aiResponse,
                 isBot: true,
@@ -214,11 +231,11 @@ ${giftParams.budget ? `Budget: ${giftParams.budget}` : 'Budget: $20-50'}`;
         case 'santa_chat':
           if (useAzureAI) {
             try {
-              const systemPrompt = `You are Santa Claus helping with a Secret Santa gift exchange. Be jolly, festive, and helpful. Keep responses brief (2-3 sentences) with emojis.`;
+              const systemPrompt = `You are Santa Claus helping with a Secret Santa gift exchange. Be jolly, festive, and helpful. Keep responses brief (2-3 sentences) with emojis. Pay attention to conversation context and remember what was discussed.`;
               const userPrompt = `${userName} says: "${messageText}"`;
 
               console.log('🎅 Calling Azure AI for santa_chat...');
-              const aiResponse = await callAzureAI(systemPrompt, userPrompt, 0.8);
+              const aiResponse = await callAzureAI(systemPrompt, userPrompt, 0.7, chatHistory);
               console.log('✅ Azure AI responded successfully');
               return {
                 response: aiResponse,

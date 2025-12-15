@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const chatbotController = require('../controllers/chatbotController');
+const chatController = require('../controllers/chatController');
 
 // Santa AI chat endpoint (separate from group chat)
 router.post('/chat', async (req, res) => {
@@ -14,9 +15,13 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message and userName required' });
     }
 
+    // Get recent chat history for context
+    const chatHistory = await chatController.getMessageHistory(10);
+    console.log(`📜 Retrieved ${chatHistory.length} recent messages for context`);
+
     // Process message through chatbot controller
     console.log('📞 Calling chatbot controller...');
-    const result = await chatbotController.processMessage(message, userName);
+    const result = await chatbotController.processMessage(message, userName, chatHistory);
     console.log('📥 Chatbot result:', result);
     
     if (result && result.response) {
@@ -34,7 +39,7 @@ router.post('/chat', async (req, res) => {
           const systemPrompt = 'You are Santa Claus, a jolly helper for Secret Santa. Be festive, helpful, and conversational. Keep responses brief (2-3 sentences) with emojis.';
           const userPrompt = `${userName} says: "${message}"`;
           
-          const aiResponse = await chatbotController.callAzureAI(systemPrompt, userPrompt, 0.8);
+          const aiResponse = await chatbotController.callAzureAI(systemPrompt, userPrompt, 0.8, chatHistory);
           console.log('✅ Azure AI general chat response received');
           
           res.json({
