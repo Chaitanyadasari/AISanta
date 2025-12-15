@@ -1,0 +1,18 @@
+{
+  "name": "santa-ai-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Santa AI Secret Santa application",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "dotenv": "^16.4.5"
+  },
+  "keywords": ["mcp", "santa-ai", "secret-santa", "chatbot"],
+  "author": "Santa AI Team",
+  "license": "MIT"
+}
