@@ -44,11 +44,45 @@
   border-bottom-left-radius: 4px;
 }
 
+.message-bot .message-content {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-left: 4px solid #ffd700;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.message-bot .message-username {
+  color: #ffd700;
+}
+
+.message-bot .message-text {
+  color: white;
+}
+
+.message-bot .message-time {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .message-username {
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 4px;
   color: #667eea;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bot-badge {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  color: #1f2937;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .message-text {

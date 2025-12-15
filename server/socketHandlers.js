@@ -1,4 +1,5 @@
 const chatController = require('./controllers/chatController');
+const chatbotController = require('./controllers/chatbotController');
 
 // Rate limiting: track message timestamps per user
 const userMessageTimestamps = new Map();
@@ -78,7 +79,7 @@ module.exports = (io) => {
 
         const message = await chatController.saveMessage(messageData);
         
-        // Broadcast to all clients including sender
+        // Broadcast user's message to all clients including sender
         io.emit('new_message', message);
         
         console.log(`Message from ${socket.userData.username}: ${data.message.substring(0, 50)}`);

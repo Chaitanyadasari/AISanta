@@ -34,14 +34,17 @@ async function getMessageHistory(limit = 100) {
 async function saveMessage(messageData) {
   await initMessagesFile();
   
-  // Sanitize the message content
-  const sanitizedMessage = sanitizeMessage(messageData.message);
+  // Don't sanitize bot messages (they're already safe)
+  const isBotMessage = messageData.userId === 'santa-bot';
+  const messageContent = isBotMessage ? messageData.message : sanitizeMessage(messageData.message);
   
-  if (!sanitizedMessage || sanitizedMessage.length === 0) {
+  if (!messageContent || messageContent.length === 0) {
     throw new Error('Message cannot be empty');
   }
   
-  if (sanitizedMessage.length > 500) {
+  // Allow longer messages for bot responses (up to 2000 chars)
+  const maxLength = isBotMessage ? 2000 : 500;
+  if (messageContent.length > maxLength) {
     throw new Error('Message too long');
   }
   
@@ -50,7 +53,7 @@ async function saveMessage(messageData) {
     userId: messageData.userId,
     username: messageData.username,
     nameCode: messageData.nameCode,
-    message: sanitizedMessage,
+    message: messageContent,
     timestamp: new Date().toISOString(),
     type: 'user_message'
   };

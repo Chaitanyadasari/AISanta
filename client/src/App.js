@@ -7,6 +7,7 @@ import AssignmentDisplay from './components/AssignmentDisplay';
 import Navigation from './components/Navigation';
 import Chat from './components/Chat';
 import ChatWidget from './components/ChatWidget';
+import SantaAI from './components/SantaAI';
 import { signup, login, getAssignment, getNameCodes, addPlayer, generateAssignments, resetAssignments, deletePlayer } from './utils/api';
 import './App.css';
 
@@ -33,6 +34,7 @@ function App() {
   const [isLoading, setLoading] = useState(false);
   const [loadingGen, setLoadingGen] = useState(false);
   const [genMessage, setGenMessage] = useState("");
+  const [isSantaAIOpen, setIsSantaAIOpen] = useState(false);
 
   // Function to check for assignment updates
   const checkAssignment = async (userNameCode) => {
@@ -326,6 +328,7 @@ function App() {
             localStorage.setItem('santa_page', 'landing');
           }}
           onNameCodes={openNameCodes}
+          onSantaAI={() => setIsSantaAIOpen(true)}
           onLogout={logout}
         />
       )}
@@ -366,6 +369,15 @@ function App() {
             nameCode: nameCode || user,
             email: userEmail
           }}
+        />
+      )}
+
+      {/* Santa AI Modal */}
+      {user && (
+        <SantaAI
+          isOpen={isSantaAIOpen}
+          onClose={() => setIsSantaAIOpen(false)}
+          userName={user}
         />
       )}
     </div>
