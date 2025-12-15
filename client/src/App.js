@@ -5,6 +5,8 @@ import Landing from './components/Landing';
 import NameCodes from './components/NameCodes';
 import AssignmentDisplay from './components/AssignmentDisplay';
 import Navigation from './components/Navigation';
+import Chat from './components/Chat';
+import ChatWidget from './components/ChatWidget';
 import { signup, login, getAssignment, getNameCodes, addPlayer, generateAssignments, resetAssignments, deletePlayer } from './utils/api';
 import './App.css';
 
@@ -355,6 +357,17 @@ function App() {
         />
       )}
       {isLoading && <div className="loading">⏳ Loading...</div>}
+      
+      {/* Floating Chat Widget - Available on all pages when logged in */}
+      {user && page !== "login" && page !== "signup" && (
+        <ChatWidget
+          user={{
+            username: user,
+            nameCode: nameCode || user,
+            email: userEmail
+          }}
+        />
+      )}
     </div>
   );
 }
