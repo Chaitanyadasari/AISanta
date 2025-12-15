@@ -1,26 +1,23 @@
-const fs = require('fs');
-const path = require('path');
 const bcrypt = require('bcrypt');
+const playersDB = require('../db/playersDB');
 
-const PLAYERS_FILE = path.join(__dirname, '../models/players.json');
 const SALT_ROUNDS = 10;
 
-function getPlayers() {
-  return JSON.parse(fs.readFileSync(PLAYERS_FILE, 'utf-8')).players;
-}
-
-function writePlayers(players) {
-  fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
-}
-
-exports.getNameCodes = (req, res) => {
-  const players = getPlayers();
-  const nameCodes = players.filter(p => !p.isAdmin).map(p => ({
-    nameCode: p.nameCode,
-    email: p.email,
-    username: p.username
-  }));
-  res.json({ nameCodes });
+exports.getNameCodes = async (req, res) => {
+  try {
+    const { players } = await playersDB.getAllPlayers();
+    const nameCodes = players
+      .filter(p => !p.isAdmin)
+      .map(p => ({
+        nameCode: p.nameCode,
+        email: p.email,
+        username: p.username
+      }));
+    res.json({ nameCodes });
+  } catch (error) {
+    console.error('Error getting name codes:', error);
+    res.status(500).json({ success: false, message: 'Error retrieving players' });
+  }
 };
 
 exports.addNameCode = async (req, res) => {
@@ -37,10 +34,9 @@ exports.addNameCode = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Valid email is required!' });
     }
     
-    const players = getPlayers();
-    
     // Check if player with this name already exists
-    if (players.some(p => p.nameCode.toLowerCase() === nameCode.toLowerCase())) {
+    const existingByNameCode = await playersDB.getPlayerByNameCode(nameCode);
+    if (existingByNameCode) {
       return res.status(400).json({ 
         success: false, 
         message: 'Player with this name already exists. They may have already signed up!' 
@@ -48,7 +44,8 @@ exports.addNameCode = async (req, res) => {
     }
     
     // Check if email already exists
-    if (players.some(p => p.email.toLowerCase() === email.toLowerCase())) {
+    const existingByEmail = await playersDB.getPlayerByEmail(email.toLowerCase());
+    if (existingByEmail) {
       return res.status(400).json({ 
         success: false, 
         message: 'Email already registered!' 
@@ -63,6 +60,7 @@ exports.addNameCode = async (req, res) => {
     }
     
     // Ensure username is unique by adding number if needed
+    const { players } = await playersDB.getAllPlayers();
     let finalUsername = username;
     let counter = 1;
     while (players.some(p => p.username === finalUsername)) {
@@ -74,15 +72,15 @@ exports.addNameCode = async (req, res) => {
     const tempPassword = nameCode.split(' ')[0] + '2025!';
     const hashedPassword = await bcrypt.hash(tempPassword, SALT_ROUNDS);
     
-    players.push({ 
+    const newPlayer = { 
       username: finalUsername,
       nameCode, 
-      email, 
+      email: email.toLowerCase(), 
       password: hashedPassword,
       isAdmin: false 
-    });
+    };
     
-    writePlayers(players);
+    await playersDB.addPlayer(newPlayer);
     
     res.json({ 
       success: true, 
@@ -96,25 +94,32 @@ exports.addNameCode = async (req, res) => {
   }
 };
 
-exports.deleteNameCode = (req, res) => {
-  const { nameCode } = req.body;
-  if (!nameCode) {
-    return res.status(400).json({ success: false, message: 'Player name is required' });
+exports.deleteNameCode = async (req, res) => {
+  try {
+    const { nameCode } = req.body;
+    if (!nameCode) {
+      return res.status(400).json({ success: false, message: 'Player name is required' });
+    }
+    
+    // Prevent deletion of admin
+    if (nameCode.toLowerCase() === 'admin') {
+      return res.status(400).json({ success: false, message: 'Cannot delete admin user' });
+    }
+    
+    const player = await playersDB.getPlayerByNameCode(nameCode);
+    
+    if (!player) {
+      return res.status(404).json({ success: false, message: 'Player not found' });
+    }
+    
+    if (player.isAdmin) {
+      return res.status(400).json({ success: false, message: 'Cannot delete admin user' });
+    }
+    
+    await playersDB.deletePlayer(player.email);
+    res.json({ success: true, message: 'Player deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting player:', error);
+    res.status(500).json({ success: false, message: 'Error deleting player' });
   }
-  
-  // Prevent deletion of admin
-  if (nameCode.toLowerCase() === 'admin') {
-    return res.status(400).json({ success: false, message: 'Cannot delete admin user' });
-  }
-  
-  const players = getPlayers();
-  const playerIndex = players.findIndex(p => p.nameCode.toLowerCase() === nameCode.toLowerCase() && !p.isAdmin);
-  
-  if (playerIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Player not found' });
-  }
-  
-  players.splice(playerIndex, 1);
-  writePlayers(players);
-  res.json({ success: true, message: 'Player deleted successfully' });
 };

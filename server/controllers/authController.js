@@ -1,18 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const bcrypt = require('bcrypt');
+const playersDB = require('../db/playersDB');
 
-const PLAYERS_FILE = path.join(__dirname, '../models/players.json');
 const SALT_ROUNDS = 10;
-
-function getPlayers() {
-  const data = fs.readFileSync(PLAYERS_FILE, 'utf-8');
-  return JSON.parse(data).players;
-}
-
-function savePlayers(players) {
-  fs.writeFileSync(PLAYERS_FILE, JSON.stringify({ players }, null, 2));
-}
 
 // Password strength validation
 function validatePassword(password) {
@@ -52,10 +41,9 @@ exports.signup = async (req, res) => {
       });
     }
 
-    const players = getPlayers();
-    
     // Check if username already exists
-    if (players.find(p => p.username.toLowerCase() === username.toLowerCase())) {
+    const existingByUsername = await playersDB.getPlayerByUsername(username.trim());
+    if (existingByUsername) {
       return res.status(400).json({ 
         success: false, 
         message: 'Username already exists. Please choose a different username.' 
@@ -63,7 +51,8 @@ exports.signup = async (req, res) => {
     }
 
     // Check if email already exists
-    if (players.find(p => p.email.toLowerCase() === email.toLowerCase())) {
+    const existingByEmail = await playersDB.getPlayerByEmail(email.toLowerCase().trim());
+    if (existingByEmail) {
       return res.status(400).json({ 
         success: false, 
         message: 'Email already registered. Please use a different email or login.' 
@@ -82,8 +71,7 @@ exports.signup = async (req, res) => {
       isAdmin: false
     };
 
-    players.push(newPlayer);
-    savePlayers(players);
+    await playersDB.addPlayer(newPlayer);
 
     return res.json({ 
       success: true, 
@@ -112,10 +100,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    const players = getPlayers();
-    
     // Find user by username (case-insensitive)
-    const user = players.find(p => p.username.toLowerCase() === username.toLowerCase());
+    const user = await playersDB.getPlayerByUsername(username);
     
     if (!user) {
       return res.status(401).json({ 

@@ -5,9 +5,16 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const socketIo = require('socket.io');
+const { connectDB } = require('./db/cosmosdb');
 
 const app = express();
 const server = http.createServer(app);
+
+// Initialize Cosmos DB connection
+connectDB().catch(err => {
+  console.error('Failed to connect to Cosmos DB:', err);
+  process.exit(1);
+});
 
 // Configure Socket.io with CORS
 const io = socketIo(server, {
