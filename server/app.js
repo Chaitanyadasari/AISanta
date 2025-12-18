@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const socketIo = require('socket.io');
 const { connectDB } = require('./db/cosmosdb');
+const { getMCPClient } = require('./mcp/mcpClient');
 
 const app = express();
 const server = http.createServer(app);
@@ -15,6 +16,13 @@ connectDB().catch(err => {
   console.error('Failed to connect to Cosmos DB:', err);
   process.exit(1);
 });
+
+// Initialize MCP client (async, non-blocking)
+if (process.env.USE_MCP !== 'false') {
+  getMCPClient()
+    .then(() => console.log('✅ MCP Client ready for chatbot'))
+    .catch(err => console.warn('⚠️  MCP Client failed to initialize:', err.message));
+}
 
 // Configure Socket.io with CORS
 const io = socketIo(server, {
@@ -71,17 +79,9 @@ app.get(/^\/(?!api).*/, (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Initialize MCP Chatbot
-const { getMCPClient } = require('./mcp/mcpClient');
-
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Email configured: ${process.env.EMAIL_USER ? 'Yes (' + process.env.EMAIL_USER + ')' : 'No - Check .env file'}`);
   console.log(`Socket.io chat enabled`);
-  
-  // Initialize MCP client after server starts
-  getMCPClient()
-    .then(() => console.log('✅ Santa AI Bot with MCP ready!'))
-    .catch(err => console.error('❌ MCP Bot initialization failed:', err.message));
 });
